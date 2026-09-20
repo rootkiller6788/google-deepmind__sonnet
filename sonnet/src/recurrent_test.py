@@ -262,6 +262,11 @@ class LSTMTest(test_utils.TestCase, parameterized.TestCase):
     initial_state = train_core.initial_state(self.batch_size)
     self.assertTrue(all(t is not None for t in tree.flatten(initial_state)))
 
+    # The cell is not dropped, so its mask is only there to keep the loop state
+    # free of `None`. It should stay a scalar instead of a full-size tensor.
+    _, dropout_masks = initial_state
+    self.assertIn((), [tuple(m.shape) for m in tree.flatten(dropout_masks)])
+
     @tf.function
     def unroll_train():
       return recurrent.dynamic_unroll(train_core, inputs, initial_state)
